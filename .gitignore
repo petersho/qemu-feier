@@ -110,3 +110,6 @@ tags
 TAGS
 *~
 build/
+.cproject
+.project
+
