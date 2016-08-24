@@ -25,7 +25,9 @@
 
 static void feier_init(Object *obj)
 {
+	FeierState *s = FEIER(obj);
 
+    object_initialize(&s->cpu, sizeof(s->cpu), "arm926-" TYPE_ARM_CPU);
 #if 0
     AwA10State *s = AW_A10(obj);
 
@@ -53,6 +55,15 @@ static void feier_init(Object *obj)
 
 static void feier_realize(DeviceState *dev, Error **errp)
 {
+	FeierState *s = FEIER(dev);
+	Error *err = NULL;
+
+	object_property_set_bool(OBJECT(&s->cpu), true, "realized", &err);
+	if (err != NULL) {
+		error_propagate(errp, err);
+		return;
+	}
+
 #if 0
     AwA10State *s = AW_A10(dev);
     SysBusDevice *sysbusdev;

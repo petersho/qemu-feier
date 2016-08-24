@@ -24,20 +24,36 @@
 #include "hw/boards.h"
 #include "hw/arm/feier.h"
 
-#if 0
-static struct arm_boot_info cubieboard_binfo = {
-    .loader_start = AW_A10_SDRAM_BASE,
-    .board_id = 0x1008,
-};
+static struct arm_boot_info feiboard_binfo;
 
-typedef struct CubieBoardState {
-    AwA10State *a10;
-    MemoryRegion sdram;
-} CubieBoardState;
-#endif
+typedef struct FeiBoardState {
+	FeierState soc;
+	MemoryRegion ram;
+} FeiBoardState;
 
 static void feiboard_init(MachineState *machine)
 {
+	FeiBoardState *s = g_new(FeiBoardState, 1);
+
+	object_initialize(&s->soc, sizeof(s->soc), TYPE_FEIER);
+	object_property_add_child(OBJECT(machine), "soc", OBJECT(&s->soc),
+			&error_abort);
+
+	object_property_set_bool(OBJECT(&s->soc), true, "realized", &error_fatal);
+
+	machine->ram_size = FEIER_RAM_SIZE;
+	memory_region_allocate_system_memory(&s->ram, NULL, "feiboard.ram",
+    							machine->ram_size);
+	memory_region_add_subregion(get_system_memory(), FEIER_RAM_BASE_ADDR, &s->ram);
+
+	feiboard_binfo.ram_size = machine->ram_size;
+	feiboard_binfo.kernel_filename = machine->kernel_filename;
+	feiboard_binfo.kernel_cmdline = machine->kernel_cmdline;
+	feiboard_binfo.initrd_filename = machine->initrd_filename;
+	feiboard_binfo.board_id = 0x0118;
+	feiboard_binfo.loader_start = FEIER_RAM_BASE_ADDR;
+	arm_load_kernel(&s->soc.cpu, &feiboard_binfo);
+
 #if 0
     CubieBoardState *s = g_new(CubieBoardState, 1);
     Error *err = NULL;
@@ -86,5 +102,4 @@ static void feiboard_machine_init(MachineClass *mc)
 	mc->desc = "pTech feiboard";
 	mc->init = feiboard_init;
 }
-
 DEFINE_MACHINE("feiboard", feiboard_machine_init)
